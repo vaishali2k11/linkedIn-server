@@ -99,7 +99,7 @@ exports.loginThroughGoogleController = async (req, res) => {
 
     const { sub, email, name, picture } = payload;
 
-    const userExist = await UserModel.findOne({ email });
+    let userExist = await UserModel.findOne({ email });
 
     if (!userExist) {
       userExist = await UserModel.create({
