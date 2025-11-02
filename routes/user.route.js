@@ -30,8 +30,6 @@ route.get("/get-pending-friend", Authentication.authAuthentication, UserControll
 route.delete("/remove-friend/:friendId", Authentication.authAuthentication, UserController.removeFriendFromListController)
 
 route.get("/self", Authentication.authAuthentication, (req, res) => {
-  console.log("req.user :", req.user);
-
   res.json({
     user: req.user,
   });
