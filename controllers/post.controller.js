@@ -104,7 +104,7 @@ exports.getSinglePostById = async (req, res) => {
 
     res.status(200).json({
       message: "Successfully post has been found!",
-      post: singlePost,
+      posts: singlePost,
     });
   } catch (error) {
     console.log("error in getSinglePostById():", error.message);
