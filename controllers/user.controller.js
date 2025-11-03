@@ -49,7 +49,7 @@ exports.registerController = async (req, res) => {
 exports.loginController = async (req, res) => {
   try {
     let { email, password } = req.body;
-    console.log('req.body:', req.body)
+    console.log("req.body:", req.body);
     const userExist = await UserModel.findOne({ email });
 
     if (!userExist) {
@@ -198,211 +198,214 @@ exports.logOutUserController = async (req, res) => {
 };
 
 exports.findUserWhileSearchingController = async (req, res) => {
-    try {
-      let { query } = req.query;
-      const users = await UserModel.find({
-        $and: [
-          { _id: {$ne: req.user._id}},
-          {$or: [
-            { f_name: { $regex: new RegExp(`^${query}`, 'i')}},
-            { email: { $regex: new RegExp(`^${query}`, 'i')}},
-          ]}
-        ]
-      })
+  try {
+    let { query } = req.query;
+    const users = await UserModel.find({
+      $and: [
+        { _id: { $ne: req.user._id } },
+        {
+          $or: [
+            { f_name: { $regex: new RegExp(`^${query}`, "i") } },
+            { email: { $regex: new RegExp(`^${query}`, "i") } },
+          ],
+        },
+      ],
+    });
 
-      res.status(200).json({
-        message: 'fetched member',
-
-        users
-      })
-    } catch (error) {
-        console.log("error in findUserWhileSearchingController():", error.message);
-        res.status(500).json({
-            error: "Server error",
-            message: error.message,
-        });
-    }
-}
+    res.status(200).json({
+      message: "fetched member",
+      users,
+    });
+  } catch (error) {
+    console.log("error in findUserWhileSearchingController():", error.message);
+    res.status(500).json({
+      error: "Server error",
+      message: error.message,
+    });
+  }
+};
 
 exports.sendFriendRequestController = async (req, res) => {
-    try {
-      const sender = req.user._id;
-      const { reciever } = req.body;
+  try {
+    const sender = req.user._id;
+    const { reciever } = req.body;
 
-      const userExist = await UserModel.findById(reciever);
-      if(!userExist) {
-        return res.status(404).json({
-          error: 'No such user exist'
-        })
-      }
-
-      const index = req.user.friends.findIndex(id => id.equals(reciever));
-      if(index !== -1) {
-        return res.status(404).json({
-          error: 'Already Friend'
-        })
-      }
-
-      const lastIndex = userExist.pending_friends.findIndex(id => id.equals(req.user._id));
-
-      if(lastIndex !== -1) {
-        return res.status(404).json({
-          error: 'Already sent request'
-        })
-      }
-
-      userExist.pending_friends.push(sender);
-      let content = `${req.user.f_name} has sent you friend request`;
-
-      const notification = new NotificationModel({
-        sender,
-        reciever,
-        content,
-        type: "friendRequest"
-      })
-      await notification.save();
-      await userExist.save();
-
-      res.status(200).json({
-        message: 'Friend request sent'
-      })
-
-    } catch (error) {
-        console.log("error in sendFriendRequestController():", error.message);
-        res.status(500).json({
-            error: "Server error",
-            message: error.message,
-        });
+    const userExist = await UserModel.findById(reciever);
+    if (!userExist) {
+      return res.status(404).json({
+        error: "No such user exist",
+      });
     }
-}
+
+    const index = req.user.friends.findIndex((id) => id.equals(reciever));
+    if (index !== -1) {
+      return res.status(404).json({
+        error: "Already Friend",
+      });
+    }
+
+    const lastIndex = userExist.pending_friends.findIndex((id) =>
+      id.equals(req.user._id)
+    );
+
+    if (lastIndex !== -1) {
+      return res.status(404).json({
+        error: "Already sent request",
+      });
+    }
+
+    userExist.pending_friends.push(sender);
+    let content = `${req.user.f_name} has sent you friend request`;
+
+    const notification = new NotificationModel({
+      sender,
+      reciever,
+      content,
+      type: "friendRequest",
+    });
+    await notification.save();
+    await userExist.save();
+
+    res.status(200).json({
+      message: "Friend request sent",
+    });
+  } catch (error) {
+    console.log("error in sendFriendRequestController():", error.message);
+    res.status(500).json({
+      error: "Server error",
+      message: error.message,
+    });
+  }
+};
 
 exports.acceptFriendRequestController = async (req, res) => {
-    try {
-      let { friendId } = req.body;
-      let selfId = req.user._id;
+  try {
+    let { friendId } = req.body;
+    let selfId = req.user._id;
 
-      const friendData = await UserModel.findById(friendId);
+    const friendData = await UserModel.findById(friendId);
 
-      if(!friendData) {
-        return res.status(404).json({
-          error: 'So such user exist.'
-        })
-      }
-
-      const index = req.user.pending_friends.findIndex(id => id.equals(friendId));
-
-      if(index !== -1) {
-        req.user.pending_friends.splice(index, 1);
-      } else {
-        return res.status(404).json({
-          error: 'No any request from such user!'
-        })
-      }
-
-      req.user.friends.push(friendId);
-      friendData.friends.push(req.user._id);
-
-      let content = `${req.user.f_name} has accepted your friend request`;
-      const notification = new NotificationModel({
-        sender: req.user._id,
-        reciever: friendId,
-        content,
-        type: "friendRequest"
-      })
-      await notification.save();
-      await friendData.save();
-
-      await req.user.save();
-
-      return res.status(200).json({
-        message: 'You both are connected now.'
-      })
-
-    } catch (error) {
-        console.log("error in acceptFriendRequestController():", error.message);
-        res.status(500).json({
-            error: "Server error",
-            message: error.message,
-        });
+    if (!friendData) {
+      return res.status(404).json({
+        error: "So such user exist.",
+      });
     }
-}
+
+    const index = req.user.pending_friends.findIndex((id) =>
+      id.equals(friendId)
+    );
+
+    if (index !== -1) {
+      req.user.pending_friends.splice(index, 1);
+    } else {
+      return res.status(404).json({
+        error: "No any request from such user!",
+      });
+    }
+
+    req.user.friends.push(friendId);
+    friendData.friends.push(req.user._id);
+
+    let content = `${req.user.f_name} has accepted your friend request`;
+    const notification = new NotificationModel({
+      sender: req.user._id,
+      reciever: friendId,
+      content,
+      type: "friendRequest",
+    });
+    await notification.save();
+    await friendData.save();
+
+    await req.user.save();
+
+    return res.status(200).json({
+      message: "You both are connected now.",
+    });
+  } catch (error) {
+    console.log("error in acceptFriendRequestController():", error.message);
+    res.status(500).json({
+      error: "Server error",
+      message: error.message,
+    });
+  }
+};
 
 exports.getAllFriendsController = async (req, res) => {
-    try {
-      let friendList = await req.user.populate("friends");
+  try {
+    let friendList = await req.user.populate("friends");
 
-      res.status(200).json({
-        message: "Successfully found all friend list!",
-        friends: friendList.friends
-      })
-    } catch (error) {
-        console.log("error in getAllFriendsController():", error.message);
-        res.status(500).json({
-            error: "Server error",
-            message: error.message,
-        });
-    }
-}
+    res.status(200).json({
+      message: "Successfully found all friend list!",
+      friends: friendList.friends,
+    });
+  } catch (error) {
+    console.log("error in getAllFriendsController():", error.message);
+    res.status(500).json({
+      error: "Server error",
+      message: error.message,
+    });
+  }
+};
 
 exports.getPendingFriendController = async (req, res) => {
-    try {
-      let pendingFriendsList = await req.user.populate("pending_friends");
+  try {
+    let pendingFriendsList = await req.user.populate("pending_friends");
 
-      res.status(200).json({
-        message: "Successfully found all pending request!",
-        pendingFriends: pendingFriendsList.pending_friends
-      })
-    } catch (error) {
-        console.log("error in getPendingFriendController():", error.message);
-        res.status(500).json({
-            error: "Server error",
-            message: error.message,
-        });
-    }
-}
+    res.status(200).json({
+      message: "Successfully found all pending request!",
+      pendingFriends: pendingFriendsList.pending_friends,
+    });
+  } catch (error) {
+    console.log("error in getPendingFriendController():", error.message);
+    res.status(500).json({
+      error: "Server error",
+      message: error.message,
+    });
+  }
+};
 
 exports.removeFriendFromListController = async (req, res) => {
-    try {
-      let selfId = req.user._id;
-      let { friendId } = req.params;
+  try {
+    let selfId = req.user._id;
+    let { friendId } = req.params;
 
-      const friendData = await UserModel.findById(friendId);
-      if(!friendData) {
-        return res.status(404).json({
-          error: 'No such user exist'
-        })
-      }
-
-      const index = req.user.friends.findIndex(id => id.equals(friendId));
-      const friendIndex = friendData.friends.findIndex(id => id.equals(selfId));
-
-      if(index !== -1) {
-        req.user.friends.splice(index, 1);
-      } else {
-        return res.status(400).json({
-          error: 'No any request from such user!'
-        })
-      }
-
-      if(friendIndex !== -1) {
-        friendData.friends.splice(friendIndex, 1)
-      } else {
-        return res.status(404).json({
-          error: 'No any request from such user!'
-        })
-      }
-
-      await req.user.save();
-      await friendData.save();
-
-      res.status(200).json({
-        message: "You both are disconnected now!"
-      })
-    } catch (error) {
-        console.log("error in removeFriendFromListController():", error.message);
-        res.status(500).json({
-            error: "Server error",
-            message: error.message,
-        });
+    const friendData = await UserModel.findById(friendId);
+    if (!friendData) {
+      return res.status(404).json({
+        error: "No such user exist",
+      });
     }
-}
+
+    const index = req.user.friends.findIndex((id) => id.equals(friendId));
+    const friendIndex = friendData.friends.findIndex((id) => id.equals(selfId));
+
+    if (index !== -1) {
+      req.user.friends.splice(index, 1);
+    } else {
+      return res.status(400).json({
+        error: "No any request from such user!",
+      });
+    }
+
+    if (friendIndex !== -1) {
+      friendData.friends.splice(friendIndex, 1);
+    } else {
+      return res.status(404).json({
+        error: "No any request from such user!",
+      });
+    }
+
+    await req.user.save();
+    await friendData.save();
+
+    res.status(200).json({
+      message: "You both are disconnected now!",
+    });
+  } catch (error) {
+    console.log("error in removeFriendFromListController():", error.message);
+    res.status(500).json({
+      error: "Server error",
+      message: error.message,
+    });
+  }
+};
