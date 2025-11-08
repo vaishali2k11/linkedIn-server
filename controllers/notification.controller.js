@@ -23,7 +23,7 @@ exports.getNotificationController = async (req, res) => {
 exports.updateReadStatusController = async (req, res) => {
     try {
         const { notificationId } = req.body;
-        const notification = await NotificationModel.findByIdAndUpdate(notificationId, { isRead: true })
+        const notification = await NotificationModel.findByIdAndUpdate(notificationId, { is_read: true })
 
         if(!notification) {
             return res.status(404).json({

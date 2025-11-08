@@ -26,8 +26,8 @@ const notificationSchema = new mongoose.Schema(
       default: false,
     },
     post_id: {
-      type: String,
-      default: "",
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'post'
     },
   },
   {

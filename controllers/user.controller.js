@@ -49,13 +49,18 @@ exports.registerController = async (req, res) => {
 exports.loginController = async (req, res) => {
   try {
     let { email, password } = req.body;
-    console.log("req.body:", req.body);
     const userExist = await UserModel.findOne({ email });
 
     if (!userExist) {
       return res.status(400).json({
         error: "Invalid credentials. Please try again!",
       });
+    }
+
+    if(userExist && !userExist.password) {
+      return res.status(400).json({
+        error: "Please login through Google!"
+      })
     }
 
     const isPasswordSame = await bcryptjs.compare(password, userExist.password);

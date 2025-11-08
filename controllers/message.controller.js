@@ -4,6 +4,9 @@ const MessageModel = require("../models/message.model");
 exports.sendMessageController = async (req, res) => {
     try {
         let { conversation, message, picture } = req.body;
+        console.log('picture:', picture)
+        console.log('message:', message)
+        console.log('conversation:', conversation)
         let saveSendMessage = new MessageModel({
             sender: req.user._id,
             conversation,
@@ -16,7 +19,7 @@ exports.sendMessageController = async (req, res) => {
         let populatedMessage = await saveSendMessage.populate("sender", "-password");
         res.status(201).json({
             message: "message has been save!",
-            messsageData: populatedMessage
+            messagesData: populatedMessage
         })
     } catch (error) {
         console.log("error in sendMessageController():", error.message);

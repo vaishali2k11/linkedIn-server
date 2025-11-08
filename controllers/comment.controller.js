@@ -30,7 +30,7 @@ exports.createNewCommentController = async (req, res) => {
             reciever: postExist.user._id,
             content,
             type: 'comment',
-            postId: postId.toString()
+            post_id: postId
         })
         await notification.save();
 
